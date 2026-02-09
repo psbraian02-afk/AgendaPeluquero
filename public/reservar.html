@@ -136,7 +136,6 @@
     const currentDay = now.getDate();
 
     const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-
     const servicios = [
       { id: "corte", label: "Corte de pelo" },
       { id: "barba", label: "Barba" },
@@ -156,7 +155,7 @@
     const servicesBox = document.getElementById("services");
     const resumenBox = document.getElementById("resumenBox");
 
-    // 🔽 Traer turnos ocupados del backend (Railway)
+    // Traer turnos ocupados del backend (Railway)
     fetch("/api/turnos")
       .then(r => r.json())
       .then(data => { turnosOcupados = data; });
@@ -183,16 +182,10 @@
         d.className = "item";
         d.innerText = dNum;
 
-        // ⛔ Bloquear días pasados
-        if(selMes === currentMonth && dNum < currentDay) {
-          d.classList.add("disabled");
-        }
+        if(selMes === currentMonth && dNum < currentDay) d.classList.add("disabled");
 
-        // ⛔ Bloquear días ya ocupados (backend)
         const key = `${year}-${selMes}-${dNum}`;
-        if (turnosOcupados.find(t => t.key === key)) {
-          d.classList.add("disabled");
-        }
+        if (turnosOcupados.find(t => t.key === key)) d.classList.add("disabled");
 
         d.onclick = () => {
           document.querySelectorAll("#dias .item").forEach(x => x.classList.remove("active"));
@@ -242,7 +235,7 @@
       document.getElementById("step-" + step).classList.add("active");
     }
 
-    // 🔽 Antes usabas localStorage: ahora guardamos en Railway
+    // Confirmar: guardar en Railway y enviar a FormSpark
     async function confirmar() {
       const res = await fetch("/api/turnos", {
         method: "POST",
@@ -255,10 +248,22 @@
         })
       });
 
-      if (!res.ok) {
-        alert("Ese turno ya fue reservado 😬");
-        return;
-      }
+      if (!res.ok) { alert("Ese turno ya fue reservado 😬"); return; }
+
+      // Enviar correo al barbero via FormSpark
+      const fechaTexto = `${selDia} de ${meses[selMes]}`;
+      const serviciosTexto = [...selServicios].map(id => servicios.find(s => s.id === id).label).join(", ");
+
+      fetch("https://submit.formspark.io/mTOlSkwcE", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          estudio: "LDMS STUDIO",
+          fecha: fechaTexto,
+          servicios: serviciosTexto
+        })
+      }).then(fRes => { if(!fRes.ok) console.error("Error enviando a FormSpark"); })
+        .catch(err => console.error("Error FormSpark:", err));
 
       document.getElementById("success").style.display = "block";
     }
