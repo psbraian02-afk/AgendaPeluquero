@@ -78,6 +78,11 @@ app.post("/api/turnos", async (req, res) => {
   }
 });
 
+// Ruta oculta para el barbero (panel admin)
+app.get("/admin", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "admin"));
+});
+
 // Levantar servidor
 app.listen(PORT, () => {
   console.log("Servidor corriendo en puerto", PORT);
