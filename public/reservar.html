@@ -46,6 +46,7 @@
       text-align: center; font-size: .9rem; cursor: pointer; border: 1px solid transparent;
     }
     .item.active { border-color: var(--primary); background: rgba(245,197,66,.15); }
+    .item.disabled { opacity:.3; pointer-events:none; }
 
     .services { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .service {
@@ -83,7 +84,6 @@
       <div style="width:32px"></div>
     </div>
 
-    <!-- PASO 1: MES -->
     <div class="step active" id="step-mes">
       <div class="section">
         <h3>Elegí el mes</h3>
@@ -92,7 +92,6 @@
       <button class="btn" onclick="next('dia')">Continuar</button>
     </div>
 
-    <!-- PASO 2: DÍA -->
     <div class="step" id="step-dia">
       <div class="section">
         <h3>Elegí el día</h3>
@@ -102,7 +101,6 @@
       <button class="btn" onclick="next('servicios')">Continuar</button>
     </div>
 
-    <!-- PASO 3: SERVICIOS -->
     <div class="step" id="step-servicios">
       <div class="section">
         <h3>¿Qué te querés hacer?</h3>
@@ -112,7 +110,6 @@
       <button class="btn" onclick="next('resumen')">Continuar</button>
     </div>
 
-    <!-- PASO 4: RESUMEN -->
     <div class="step" id="step-resumen">
       <div class="section">
         <h3>Resumen de tu cita</h3>
@@ -125,14 +122,21 @@
         ✅ ¡Turno confirmado! <br/>
         Te esperamos en <b>LDMS STUDIO</b>. <br/>
         Recomendamos sacar captura de esta pantalla.
+        <br/><br/>
+        <button class="btn" onclick="volver()">Volver al menú</button>
       </div>
-      <div class="note">Dirección: (poné acá la dirección del local)</div>
+      <div class="note">Dirección: Av. Artigas 1234</div>
     </div>
   </div>
 
   <script>
-    const meses = ["Febrero", "Marzo", "Abril", "Mayo", "Junio"];
-    const dias = Array.from({length: 31}, (_, i) => i + 1);
+    const now = new Date();
+    const year = now.getFullYear();
+    const currentMonth = now.getMonth();
+    const currentDay = now.getDate();
+
+    const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
     const servicios = [
       { id: "corte", label: "Corte de pelo" },
       { id: "barba", label: "Barba" },
@@ -145,33 +149,58 @@
     let selMes = null;
     let selDia = null;
     let selServicios = new Set();
+    let turnosOcupados = [];
 
     const mesesBox = document.getElementById("meses");
     const diasBox = document.getElementById("dias");
     const servicesBox = document.getElementById("services");
     const resumenBox = document.getElementById("resumenBox");
 
-    meses.forEach(m => {
+    // 🔽 Traer turnos ocupados del backend (Railway)
+    fetch("/api/turnos")
+      .then(r => r.json())
+      .then(data => { turnosOcupados = data; });
+
+    meses.forEach((m, i) => {
+      if (i < currentMonth) return;
       const d = document.createElement("div");
       d.className = "item";
       d.innerText = m;
       d.onclick = () => {
         document.querySelectorAll("#meses .item").forEach(x => x.classList.remove("active"));
-        d.classList.add("active"); selMes = m;
+        d.classList.add("active"); selMes = i;
+        cargarDias();
       };
       mesesBox.appendChild(d);
     });
 
-    dias.forEach(n => {
-      const d = document.createElement("div");
-      d.className = "item";
-      d.innerText = n;
-      d.onclick = () => {
-        document.querySelectorAll("#dias .item").forEach(x => x.classList.remove("active"));
-        d.classList.add("active"); selDia = n;
-      };
-      diasBox.appendChild(d);
-    });
+    function cargarDias(){
+      diasBox.innerHTML = "";
+      const lastDay = new Date(year, selMes+1, 0).getDate();
+
+      for(let dNum=1; dNum<=lastDay; dNum++){
+        const d = document.createElement("div");
+        d.className = "item";
+        d.innerText = dNum;
+
+        // ⛔ Bloquear días pasados
+        if(selMes === currentMonth && dNum < currentDay) {
+          d.classList.add("disabled");
+        }
+
+        // ⛔ Bloquear días ya ocupados (backend)
+        const key = `${year}-${selMes}-${dNum}`;
+        if (turnosOcupados.find(t => t.key === key)) {
+          d.classList.add("disabled");
+        }
+
+        d.onclick = () => {
+          document.querySelectorAll("#dias .item").forEach(x => x.classList.remove("active"));
+          d.classList.add("active"); selDia = dNum;
+        };
+        diasBox.appendChild(d);
+      }
+    }
 
     servicios.forEach(s => {
       const d = document.createElement("div");
@@ -192,7 +221,7 @@
     });
 
     function next(step) {
-      if (step === "dia" && !selMes) return alert("Elegí un mes");
+      if (step === "dia" && selMes === null) return alert("Elegí un mes");
       if (step === "servicios" && !selDia) return alert("Elegí un día");
       if (step === "resumen" && selServicios.size === 0) return alert("Seleccioná al menos un servicio");
 
@@ -202,7 +231,7 @@
       if (step === "resumen") {
         resumenBox.innerHTML = `
           <b>Estudio:</b> LDMS STUDIO<br/>
-          <b>Fecha:</b> ${selDia} de ${selMes}<br/>
+          <b>Fecha:</b> ${selDia} de ${meses[selMes]}<br/>
           <b>Servicios:</b> ${[...selServicios].map(id => servicios.find(s => s.id === id).label).join(", ")}
         `;
       }
@@ -213,7 +242,24 @@
       document.getElementById("step-" + step).classList.add("active");
     }
 
-    function confirmar() {
+    // 🔽 Antes usabas localStorage: ahora guardamos en Railway
+    async function confirmar() {
+      const res = await fetch("/api/turnos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          year,
+          mes: selMes,
+          dia: selDia,
+          servicios: [...selServicios]
+        })
+      });
+
+      if (!res.ok) {
+        alert("Ese turno ya fue reservado 😬");
+        return;
+      }
+
       document.getElementById("success").style.display = "block";
     }
 
