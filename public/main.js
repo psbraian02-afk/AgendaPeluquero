@@ -1,10 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const botones = document.querySelectorAll("[data-link]");
+  const btnReservar = document.getElementById("btnReservar");
 
-  botones.forEach(btn => {
-    btn.addEventListener("click", () => {
-      const pagina = btn.getAttribute("data-link");
-      window.location.href = pagina;
-    });
+  btnReservar.addEventListener("click", () => {
+    window.location.href = "/reservar.html";
   });
 });

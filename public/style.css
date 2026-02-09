@@ -1,9 +1,8 @@
 :root {
-  --bg: #0f0f0f;
-  --card: #1a1a1a;
+  --bg: #0b0b0b;
   --gold: #c9a24d;
-  --text: #f1f1f1;
-  --muted: #aaa;
+  --text: #f2f2f2;
+  --muted: #bdbdbd;
 }
 
 * {
@@ -15,87 +14,74 @@
 
 body {
   min-height: 100vh;
-  background: linear-gradient(145deg, #0f0f0f, #1b1b1b);
+  background: radial-gradient(circle at top, #1a1a1a, #0b0b0b 70%);
   color: var(--text);
+}
+
+.hero {
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.container {
-  width: 100%;
-  max-width: 420px;
-  background: var(--card);
-  border-radius: 18px;
-  padding: 30px 22px;
   text-align: center;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  padding: 24px;
 }
 
-.logo {
-  font-size: 26px;
-  font-weight: 600;
-  margin-bottom: 6px;
+.hero-content {
+  max-width: 520px;
+  animation: fadeIn 0.8s ease-out;
+}
+
+.hero h1 {
+  font-family: "Playfair Display", serif;
+  font-size: 64px;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
   color: var(--gold);
 }
 
-.subtitle {
-  font-size: 14px;
+.hero p {
+  font-size: 18px;
   color: var(--muted);
-  margin-bottom: 26px;
+  margin-bottom: 34px;
 }
 
-.menu {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin-bottom: 22px;
-}
-
-.btn {
-  padding: 14px;
-  border-radius: 12px;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 500;
-  background: var(--gold);
+.btn-primary {
+  background: linear-gradient(135deg, #d4b15a, #b48a2c);
   color: #000;
-  transition: 0.2s ease;
+  border: none;
+  padding: 16px 34px;
+  font-size: 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 10px 30px rgba(201, 162, 77, 0.35);
 }
 
-.btn.secondary {
-  background: transparent;
-  border: 1px solid var(--gold);
-  color: var(--gold);
+.btn-primary:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 16px 40px rgba(201, 162, 77, 0.45);
 }
 
-.btn:hover {
-  transform: scale(1.03);
-  filter: brightness(1.1);
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.socials {
-  display: flex;
-  justify-content: center;
-  gap: 18px;
-  margin-top: 10px;
-}
+/* Responsive */
+@media (max-width: 480px) {
+  .hero h1 {
+    font-size: 44px;
+  }
 
-.socials a {
-  color: var(--text);
-  font-size: 22px;
-  text-decoration: none;
-  transition: 0.2s;
-}
-
-.socials a:hover {
-  color: var(--gold);
-  transform: scale(1.2);
-}
-
-footer {
-  margin-top: 18px;
-  font-size: 12px;
-  color: var(--muted);
+  .hero p {
+    font-size: 16px;
+  }
 }
