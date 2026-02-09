@@ -60,6 +60,12 @@ app.post("/api/turnos", async (req, res) => {
     const data = await fs.readFile(TURNOS_FILE, "utf-8");
     const turnos = JSON.parse(data);
 
+    // 🔒 BLOQUEO DE HORARIOS OCUPADOS
+    const ocupado = turnos.find(t => t.fecha === fecha && t.hora === hora);
+    if (ocupado) {
+      return res.status(409).json({ error: "Horario ya ocupado" });
+    }
+
     const nuevoTurno = {
       id: uuidv4(),
       nombre,
